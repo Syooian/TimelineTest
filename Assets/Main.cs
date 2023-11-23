@@ -16,7 +16,7 @@ public class Main : MonoBehaviour
     /// 
     /// </summary>
     [SerializeField]
-    List<DMXDataStruct> Data = new List<DMXDataStruct>();
+    Dictionary<short, DMXDataStruct> DMXData = new Dictionary<short, DMXDataStruct>();
 
     /// <summary>
     /// 
@@ -44,7 +44,8 @@ public class Main : MonoBehaviour
             {
                 var Result = Reader.AsDataSet();
 
-                Debug.LogWarning("資料表數量 : " + Result.Tables.Count);
+                //Debug.LogWarning("資料表數量 : " + Result.Tables.Count);
+
                 foreach (var Table in Result.Tables)
                 {
                     //Debug.Log(Table);
@@ -52,15 +53,24 @@ public class Main : MonoBehaviour
                     DataRowCollection DataRow = Result.Tables[Table.ToString()].Rows;
                     //Debug.LogWarning("Rows : " + DataRow.Count);
 
-                    DMXDataStruct Data = new DMXDataStruct(short.Parse(DataRow[0].ItemArray[1].ToString()));
+                    short Universe = short.Parse(DataRow[0].ItemArray[1].ToString());
+                    DMXDataStruct UniverseData;
+                    if (DMXData.ContainsKey(Universe))//如果資料內已有該Universe的資料，先取出繼續增加
+                        UniverseData = DMXData[Universe];
+                    else
+                        UniverseData = new DMXDataStruct(Universe);
+
+                    //Debug.LogWarning("Universe : " + Universe);
 
                     #region 記下資料要到哪裡中止讀取
+                    //如果Excel檔有整理乾淨，後面沒有不必要的值，其實不需要這段，直接取ItemArray的長度即可
+
                     int DmxEnd = 0;
                     for (int a = 3; a < DataRow[0].ItemArray.Length; a++)
                     {
                         if (int.TryParse(DataRow[0].ItemArray[a].ToString(), out int DMXID))
                         {
-                            Debug.Log("DMX ID : " + DMXID);
+                            //Debug.Log("DMX ID : " + DMXID);
                         }
                         else
                         {
@@ -70,72 +80,53 @@ public class Main : MonoBehaviour
                     }
                     #endregion
 
-                    //foreach (DataRow Row in DataRow)
-                    //{
-                    //    //Debug.Log(string.Join(", ", Row.ItemArray));
-
-                    //    //設Universe
-                    //    if (Row.ItemArray[0].ToString() == "Universe")
-                    //    {
-                    //        //Debug.Log("Universe : " + Row.ItemArray[1]);
-
-                    //        Data = new DMXDataStruct(short.Parse(Row.ItemArray[1].ToString()));
-
-                    //        for (int a = 3; a < Row.ItemArray.Length; a++)
-                    //        {
-                    //            if (int.TryParse(Row.ItemArray[a].ToString(), out int DMXID))
-                    //            {
-                    //                Debug.Log("DMX ID : " + DMXID);
-                    //            }
-                    //            else
-                    //            {
-                    //                DmxEnd = a;
-                    //                break;
-                    //            }
-                    //        }
-                    //    }
-
-
-
-                    //    //if (TimeSpan.TryParseExact(Row.ItemArray[1].ToString(), new string[] { @"mm\:ss", @"m\:ss" }, null, out TimeSpan ActionTime))
-                    //    //{
-                    //    //    Data.Add(new DataStruct(ActionTime, new float[] {
-                    //    //        float.Parse(Row.ItemArray[2].ToString()) ,
-                    //    //        float.Parse(Row.ItemArray[3].ToString()) ,
-                    //    //        float.Parse(Row.ItemArray[4].ToString()) ,
-                    //    //        float.Parse(Row.ItemArray[5].ToString()),
-                    //    //        float.Parse(Row.ItemArray[6].ToString()),
-                    //    //        float.Parse(Row.ItemArray[7].ToString())
-                    //    //    }));
-
-                    //    //    //Debug.Log(ID + " ActionTime : " + ActionTime.TotalSeconds + " (" + ActionTime.Minutes.ToString("00") + ":" + ActionTime.Seconds.ToString("00") + ")");
-
-                    //    //    //ID++;
-                    //    //}
-                    //}
-
                     #region 讀取時間與數值
-                    for (int a = 2; a < DmxEnd; a++)//每一行
+                    for (int a = 2; a < DataRow.Count; a++)//每一行
                     {
-                        Debug.LogWarning(string.Join(", ", DataRow[a].ItemArray));
+                        //Debug.LogWarning(string.Join(", ", DataRow[a].ItemArray));
 
-                        for (int b = 0; b < DmxEnd; b++)
+                        //總秒數
+                        var ActionTime = (int)TimeSpan.FromSeconds(int.Parse(DataRow[a].ItemArray[0].ToString())).TotalSeconds;
+                        //Debug.Log(ActionTime.TotalSeconds + " - " + ToDateTimeString(ActionTime));
+
+                        //找出現有的時間軸資料，沒有就直接New一個
+                        ActionTimeStruct Timeline;
+                        if (UniverseData.ActionTime.ContainsKey(ActionTime))
+                            Timeline = UniverseData.ActionTime[ActionTime];
+                        else
                         {
-                            Debug.Log(a + "-" + b + " : " + DataRow[a].ItemArray[b]);
+                            Timeline = new ActionTimeStruct();
+                            Timeline.DevicesValue = new float[512];
                         }
+
+                        for (int b = 3; b < DmxEnd; b++)
+                        {
+                            //Debug.Log(a + "-" + b + " : " + DataRow[a].ItemArray[b]);
+                            Timeline.DevicesValue[int.Parse(DataRow[0].ItemArray[b].ToString())] = float.Parse(DataRow[a].ItemArray[b].ToString());
+                        }
+
+                        UniverseData.ActionTime[ActionTime] = Timeline;
+
+                        //Debug.Log(ActionTime.TotalSeconds + " - " + ToDateTimeString(ActionTime) + " = " + string.Join(", ", ats.DevicesValue));
                     }
                     #endregion
 
-
+                    DMXData[Universe] = UniverseData;
                 }
-
-                //var ID = 0;
-
-
-
             }
         }
 
+        //foreach (var Data in DMXData)
+        //{
+        //    Debug.LogWarning("Universe : " + Data.Value.Universe);
+
+        //    foreach (var Timeline in Data.Value.ActionTime)
+        //    {
+        //        Debug.Log(
+        //            Timeline.Key + " = " +
+        //            string.Join(", ", Timeline.Value.DevicesValue));
+        //    }
+        //}
     }
 
     // Update is called once per frame
@@ -145,11 +136,15 @@ public class Main : MonoBehaviour
         {
             var CurrentTime = AVProPlayer.Control.GetCurrentTime();
 
-            var TS = TimeSpan.FromSeconds(CurrentTime);
-            Txt_Time1.text = TS.Minutes.ToString("00") + ":" + TS.Seconds.ToString("00");
+            Txt_Time1.text = ToDateTimeString(TimeSpan.FromSeconds(CurrentTime));
 
             Txt_Time2.text = ((int)CurrentTime).ToString();
         }
+    }
+
+    string ToDateTimeString(TimeSpan TS)
+    {
+        return TS.Minutes.ToString("00") + ":" + TS.Seconds.ToString("00");
     }
 
     /// <summary>
@@ -177,7 +172,7 @@ struct DMXDataStruct
     /// <summary>
     /// 
     /// </summary>
-    public DMXValueStruct[] Values;
+    public Dictionary<int, ActionTimeStruct> ActionTime;
 
     /// <summary>
     /// 
@@ -186,32 +181,21 @@ struct DMXDataStruct
     public DMXDataStruct(short Universe)
     {
         this.Universe = Universe;
-        Values = new DMXValueStruct[512];
+        ActionTime = new Dictionary<int, ActionTimeStruct>();
     }
 }
 /// <summary>
 /// 
 /// </summary>
 [Serializable]
-struct DMXValueStruct
+struct ActionTimeStruct
 {
     /// <summary>
     /// 
     /// </summary>
-    public TimeSpan ActionTime;
-    /// <summary>
-    /// 
-    /// </summary>
-    public float Value;
+    public float[] DevicesValue;
     /// <summary>
     /// 是否已觸發
     /// </summary>
     public bool IsTrigger;
-
-    public DMXValueStruct(TimeSpan ActionTime, float Value)
-    {
-        this.ActionTime = ActionTime;
-        this.Value = Value;
-        IsTrigger = false;
-    }
 }
