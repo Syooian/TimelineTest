@@ -13,7 +13,8 @@ using RenderHeads.Media.AVProVideo;
 public class Main : MonoBehaviour
 {
     /// <summary>
-    /// 
+    /// DMX資料
+    /// <para>Key : Universe</para>
     /// </summary>
     [SerializeField]
     Dictionary<short, DMXDataStruct> DMXData = new Dictionary<short, DMXDataStruct>();
@@ -129,6 +130,12 @@ public class Main : MonoBehaviour
         //}
     }
 
+    /// <summary>
+    /// 紀錄上次的時間
+    /// <para>總秒數</para>
+    /// </summary>
+    int LastCurrentTime = -1;
+
     // Update is called once per frame
     void Update()
     {
@@ -138,7 +145,23 @@ public class Main : MonoBehaviour
 
             Txt_Time1.text = ToDateTimeString(TimeSpan.FromSeconds(CurrentTime));
 
-            Txt_Time2.text = ((int)CurrentTime).ToString();
+            var NewCurrentTime = (int)CurrentTime;
+
+            Txt_Time2.text = NewCurrentTime.ToString();
+
+            if (LastCurrentTime != NewCurrentTime)
+            {
+                LastCurrentTime = NewCurrentTime;
+
+                //以當前播放時間查詢該時間是否需觸發DMX執行
+                foreach (var ActionData in DMXData)
+                {
+                    if (ActionData.Value.ActionTime.ContainsKey(LastCurrentTime))//有紀錄該觸發時間
+                    {
+                        Debug.Log(Txt_Time2.text + " - " + Txt_Time1.text + " = " + string.Join(", ", ActionData.Value.ActionTime[LastCurrentTime].DevicesValue));
+                    }
+                }
+            }
         }
     }
 
@@ -171,6 +194,7 @@ struct DMXDataStruct
     public short Universe;
     /// <summary>
     /// 
+    /// <para>Key : 觸發時間總秒數</para>
     /// </summary>
     public Dictionary<int, ActionTimeStruct> ActionTime;
 
