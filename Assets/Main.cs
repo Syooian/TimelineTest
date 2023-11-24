@@ -97,13 +97,13 @@ public class Main : MonoBehaviour
                         else
                         {
                             Timeline = new ActionTimeStruct();
-                            Timeline.DevicesValue = new float[512];
+                            Timeline.DevicesValue = new byte[512];
                         }
 
                         for (int b = 3; b < DmxEnd; b++)
                         {
                             //Debug.Log(a + "-" + b + " : " + DataRow[a].ItemArray[b]);
-                            Timeline.DevicesValue[int.Parse(DataRow[0].ItemArray[b].ToString())] = float.Parse(DataRow[a].ItemArray[b].ToString());
+                            Timeline.DevicesValue[int.Parse(DataRow[0].ItemArray[b].ToString())] = byte.Parse(DataRow[a].ItemArray[b].ToString());
                         }
 
                         UniverseData.ActionTime[ActionTime] = Timeline;
@@ -217,7 +217,7 @@ struct ActionTimeStruct
     /// <summary>
     /// 
     /// </summary>
-    public float[] DevicesValue;
+    public byte[] DevicesValue;
     /// <summary>
     /// ¬O§_¤wÄ²µo
     /// </summary>
