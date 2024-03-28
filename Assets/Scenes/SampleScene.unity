@@ -586,7 +586,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a91c53befcaaaa4db3741d1a2ce74df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Data: []
   AVProPlayer: {fileID: 1503464226}
   Txt_Time1: {fileID: 874452674}
   Txt_Time2: {fileID: 382424577}
@@ -1316,8 +1315,8 @@ MonoBehaviour:
     transparency: 0
     alphaPacking: 0
     stereoPacking: 0
-  _autoOpen: 1
-  _autoPlayOnStart: 1
+  _autoOpen: 0
+  _autoPlayOnStart: 0
   _loop: 1
   _audioVolume: 1
   _audioBalance: 0

@@ -45,14 +45,14 @@ public class Main : MonoBehaviour
             {
                 var Result = Reader.AsDataSet();
 
-                //Debug.LogWarning("資料表數量 : " + Result.Tables.Count);
+                Debug.LogWarning("資料表數量 : " + Result.Tables.Count);
 
                 foreach (var Table in Result.Tables)
                 {
-                    //Debug.Log(Table);
+                    Debug.Log("資料表名稱：" + Table);
 
                     DataRowCollection DataRow = Result.Tables[Table.ToString()].Rows;
-                    //Debug.LogWarning("Rows : " + DataRow.Count);
+                    Debug.LogWarning("Rows : " + DataRow.Count);
 
                     short Universe = short.Parse(DataRow[0].ItemArray[1].ToString());
                     DMXDataStruct UniverseData;
@@ -61,30 +61,36 @@ public class Main : MonoBehaviour
                     else
                         UniverseData = new DMXDataStruct(Universe);
 
-                    //Debug.LogWarning("Universe : " + Universe);
+                    Debug.LogWarning("Universe : " + Universe);
 
                     #region 記下資料要到哪裡中止讀取
                     //如果Excel檔有整理乾淨，後面沒有不必要的值，其實不需要這段，直接取ItemArray的長度即可
 
                     int DmxEnd = 0;
+                    Debug.Log("Row0 Length : " + DataRow[0].ItemArray.Length);
+                    Debug.Log(string.Join(", ", DataRow[0].ItemArray));
                     for (int a = 3; a < DataRow[0].ItemArray.Length; a++)
                     {
                         if (int.TryParse(DataRow[0].ItemArray[a].ToString(), out int DMXID))
                         {
-                            //Debug.Log("DMX ID : " + DMXID);
+                            Debug.Log("DMX ID : " + DMXID);
+
+                            DmxEnd = a;
                         }
                         else
                         {
-                            DmxEnd = a;
+
                             break;
                         }
                     }
+
+                    Debug.Log("DmxEnd : " + DmxEnd);
                     #endregion
 
                     #region 讀取時間與數值
                     for (int a = 2; a < DataRow.Count; a++)//每一行
                     {
-                        //Debug.LogWarning(string.Join(", ", DataRow[a].ItemArray));
+                        Debug.LogWarning(string.Join(", ", DataRow[a].ItemArray));
 
                         //總秒數
                         var ActionTime = (int)TimeSpan.FromSeconds(int.Parse(DataRow[a].ItemArray[0].ToString())).TotalSeconds;
@@ -100,9 +106,9 @@ public class Main : MonoBehaviour
                             Timeline.DevicesValue = new byte[512];
                         }
 
-                        for (int b = 3; b < DmxEnd; b++)
+                        for (int b = 3; b <= DmxEnd; b++)
                         {
-                            //Debug.Log(a + "-" + b + " : " + DataRow[a].ItemArray[b]);
+                            Debug.Log(a + "-" + b + " : " + DataRow[a].ItemArray[b]);
                             Timeline.DevicesValue[int.Parse(DataRow[0].ItemArray[b].ToString())] = byte.Parse(DataRow[a].ItemArray[b].ToString());
                         }
 
